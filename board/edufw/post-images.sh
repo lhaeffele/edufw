@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. "$BR2_EXTERNAL_EDUFW_PATH/rootfs-overlay/etc/edufw/version"
+. "$BR2_EXTERNAL_EDUFW_PATH/board/edufw/rootfs-overlay/etc/edufw/version"
 touch "$BR2_EXTERNAL_EDUFW_PATH/iso/EDUFW_ISO-$EDUFW_VERSION"
 
 cp "$BINARIES_DIR/bzImage" "$BR2_EXTERNAL_EDUFW_PATH/iso/bzImage"

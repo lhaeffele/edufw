@@ -47,6 +47,6 @@ GRUB2_TOOLS_CONF_OPTS = \
 	--enable-libzfs=no \
 	--disable-werror
 
-GRUB2_INSTALL_TARGET_OPTS = DESTDIR=$(TARGET_DIR) install
+GRUB2_TOOLS_INSTALL_TARGET_OPTS = DESTDIR=$(TARGET_DIR) install
 
 $(eval $(autotools-package))
