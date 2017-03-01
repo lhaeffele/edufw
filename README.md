@@ -23,4 +23,7 @@ To rebuild an image from edufw
 - download this project
 - download buildroot from https://buildroot.org/download.html and install it anywhere
 - in the buildroot main directory, start these commands :
+
     make defconfig BR2_EXTERNAL=<YOUR_EDUFW_REPOSITORY> BR2_DEFCONFIG=<YOUR_EDUFW_REPOSITORY>/configs/edufw_defconfig
+    make grub-tools-rebuild
+    make
