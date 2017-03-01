@@ -1,0 +1,11 @@
+#!/bin/sh
+
+ATDIR=/var/spool/cron/atjobs
+mkdir -p "$ATDIR"
+chown daemon:daemon "$ATDIR"
+chmod 600 "$ATDIR"
+chmod o+t "$ATDIR"
+
+touch "$ATDIR/.SEQ"
+chmod 600 "$ATDIR/.SEQ"
+chown daemon.daemon "$ATDIR/.SEQ"

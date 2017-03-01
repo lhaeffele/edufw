@@ -1,0 +1,83 @@
+#!/bin/sh
+
+DISKS=`LANG='' parted -l 2>/dev/null | grep '^Disk /dev/' | sed 's/^Disk //'`
+OPTIONS=`echo "$DISKS" | awk -F: '{print $1}'`
+
+die() {
+	echo "$1" >&2
+	exit 1
+}
+
+. /etc/edufw/version
+
+# Find installation media
+echo "Looking for installation media ..."
+for DEV in `ls /dev/sd* /dev/sr*`; do
+    if mount "$DEV" /mnt >/dev/null 2>&1; then
+        if [ -e "/mnt/EDUFW_ISO-$EDUFW_VERSION" ]; then
+            INSTALL_DEV="$DEV"
+        fi
+        umount "$DEV" >/dev/null 2>&1
+        [ "$INSTALL_DEV" != "" ] && break
+    fi
+done
+
+if [ "$INSTALL_DEV" == "" ]; then
+    die "Cannot find installation media"
+else
+    echo "Installation media found on $INSTALL_DEV"
+fi
+
+while [ "$TARGET_DISK" == "" ]; do
+    echo ''
+    echo 'Which disk do you want to initialize ?'
+    echo "$DISKS"
+    echo -n 'Please type the device path of the disk (q to quit): '
+    read resp
+    if [ "$resp" == "q" ]; then
+        exit 1
+    fi
+    if echo "$OPTIONS" | grep -q -e "^$resp$"; then
+        echo ''
+        echo "You choose $resp."
+        TARGET_DISK="$resp"
+    fi
+done
+
+echo "This will destroy all data from your disk $TARGET_DISK. Are you sure <y/N> ?"
+read resp
+if [ "$resp" == "y" ]; then
+    echo "Erasing disque $TARGET_DISK ..."
+
+    # Create partition table
+    parted -s "$TARGET_DISK" mklabel msdos
+    
+    # Create a unique big partition
+    SIZE=`echo "$DISKS" | grep "^$TARGET_DISK" | awk -F: '{print $2}'`
+    parted -s "$TARGET_DISK" mkpart primary fat32 10MB $SIZE \
+    	|| die "Cannot create partition on $TARGET_DISK: $!"
+    parted -s "$TARGET_DISK" set 1 boot on \
+    	|| die "Cannot set partition 1 as bootable on $TARGET_DISK: $!"
+    
+    # Create filesystem
+    mkfs.ext2 -L EDUFW "${TARGET_DISK}1" \
+    	|| die "Cannot create ext2 fs on ${TARGET_DISK}1: $!"
+    
+    mount LABEL=EDUFW /mnt \
+    	|| die "Cannot mount new fs on /mnt: $!"
+    
+    # Install boot loader
+    grub-install "$TARGET_DISK" --root-directory=/mnt \
+    	|| die "Cannot install grub on ${TARGET_DISK}: $!"
+    
+    # Copy ssh keys
+    mkdir /mnt/config/
+    cp /etc/ssh/ssh_host_* /mnt/config/ \
+    	|| die "Cannot copy ssh keys on ${TARGET_DISK}1/config/: $!"
+    
+    umount /mnt \
+    	|| die "Cannot umount new fs on /mnt: $!"
+    
+    /sbin/edufw_installimage /dev/sr0 "$EDUFW_VERSION"
+
+fi

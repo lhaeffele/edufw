@@ -1,0 +1,6 @@
+config BR2_PACKAGE_PERL_CANARY_STABILITY
+	bool "perl-canary-stability"
+	help
+	  canary to check perl compatibility for schmorp's modules
+
+	  https://metacpan.org/release/Canary-Stability

@@ -1,0 +1,41 @@
+#!/bin/sh
+
+EDUFW_MPOINT='/mnt'
+GRUB_CFG="$EDUFW_MPOINT"'/boot/grub/grub.cfg'
+
+die() {
+        echo "$1" >&2
+        exit 1
+}
+
+mount LABEL=EDUFW "$EDUFW_MPOINT" \
+    || die "Cannot mount $EDUFW_MPOINT: $!"
+
+cd "$EDUFW_MPOINT" \
+    || die "Cannot enter $EDUFW_MPOINT directory: $!"
+
+cat >"$GRUB_CFG" <<_END_
+set timeout=10
+set default="0"
+set serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1
+
+_END_
+
+for KERNEL in `ls -t */bzImage`; do
+    KERNEL_PATH=$(dirname $KERNEL)
+    if [ -f "$KERNEL_PATH/initrd.bz2" ]; then
+	    echo "Found version $KERNEL_PATH"
+	    cat >>"$GRUB_CFG" <<_END_
+menuentry "EduFW $KERNEL_PATH" {
+    search --set=root --label EDUFW --hint hd0,msdos5
+    linux /$KERNEL_PATH/bzImage
+    initrd /$KERNEL_PATH/initrd.bz2
+}
+
+_END_
+    fi
+done
+
+cd /
+umount "$EDUFW_MPOINT" \
+    || die "Cannot umount $EDUFW_MPOINT: $!"

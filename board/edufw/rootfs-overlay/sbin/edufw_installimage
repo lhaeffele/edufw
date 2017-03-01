@@ -1,0 +1,36 @@
+#!/bin/sh
+
+EDUFW_IMAGE="$1"
+EDUFW_VERSION="$2"
+IMAGE_MPOINT='/cd'
+EDUFW_MPOINT='/mnt'
+
+die() {
+        echo "$1" >&2
+        exit 1
+}
+
+mkdir -p "$IMAGE_MPOINT"
+if echo "$EDUFW_IMAGE" | grep -q -e '^/dev/'; then
+    mount "$EDUFW_IMAGE" "$IMAGE_MPOINT" \
+        || die "Cannot mount $IMAGE_MPOINT: $!"
+else
+    mount -o loop "$EDUFW_IMAGE" "$IMAGE_MPOINT" \
+        || die "Cannot mount $IMAGE_MPOINT: $!"
+fi
+
+mount LABEL=EDUFW "$EDUFW_MPOINT" \
+    || die "Cannot mount $EDUFW_MPOINT: $!"
+
+mkdir -p "$EDUFW_MPOINT"/"$EDUFW_VERSION"
+
+cp "$IMAGE_MPOINT"/bzImage "$EDUFW_MPOINT"/"$EDUFW_VERSION"/
+cp "$IMAGE_MPOINT"/initrd.bz2 "$EDUFW_MPOINT"/"$EDUFW_VERSION"/
+
+umount "$IMAGE_MPOINT" \
+    || die "Cannot mount $IMAGE_MPOINT: $!"
+
+umount "$EDUFW_MPOINT" \
+    || die "Cannot mount $EDUFW_MPOINT: $!"
+
+/sbin/edufw_grubconf_gen

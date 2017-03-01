@@ -1,0 +1,4 @@
+menu "Perl libraries/modules"
+source "$BR2_EXTERNAL_EDUFW_PATH/package/perl-anyevent/Config.in"
+endmenu
+source "$BR2_EXTERNAL_EDUFW_PATH/package/grub2-tools/Config.in"
