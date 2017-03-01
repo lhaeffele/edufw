@@ -12,11 +12,11 @@ To install edufw:
 - burn it on a cdrom or write it on a usb stick with dd ("dd if=edifw-version.iso of=/dev/sdb" on linux). Be carefull with this part to avoid destroying a disk of your computer instead of the usb stick
 - boot the firewall on this image
 - once booted, login as root with password "edufw-123456"
-- run the edufw_initdisk command to destroy all data on the disk and install edufw
+- run the "`edufw_initdisk`" command to destroy all data on the disk and install edufw
 - unplug the usb stick from the firewall or eject the cdrom
 - run the reboot command to reboot from the disk of your firewall
-- initialize network with the edufw_initnet command
-- connect to the edufw-server with edufw_enroll command
+- initialize network with the "`edufw_initnet`" command
+- connect to the edufw-server with "`edufw_enroll`" command
 Everything else will be done from the edufw-server ...
 
 ## Rebuild an image
@@ -24,13 +24,14 @@ To rebuild an image from edufw:
 - download this project
 - download buildroot from https://buildroot.org/download.html and install it anywhere
 - in the buildroot main directory, start these commands :
-
-    make defconfig BR2_EXTERNAL=\<YOUR_EDUFW_REPOSITORY\> BR2_DEFCONFIG=\<YOUR_EDUFW_REPOSITORY\>/configs/edufw_defconfig
-    make grub-tools-rebuild
-    make
+```
+make defconfig BR2_EXTERNAL=\<YOUR_EDUFW_REPOSITORY\> BR2_DEFCONFIG=\<YOUR_EDUFW_REPOSITORY\>/configs/edufw_defconfig
+make grub-tools-rebuild
+make
+```
 
 ## Upgrading
 Edufw upgrades should be done via edufw-server.
 If your really need to upgrade it manually:
 - download the iso file of the new version of edufw on the firewall (via wget or an usb stick)
-- run the "edufw_installimage \<ISOFILE\>" command
+- run the "`edufw_installimage \<ISOFILE\>`" command
