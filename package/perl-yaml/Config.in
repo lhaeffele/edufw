@@ -1,0 +1,4 @@
+config BR2_PACKAGE_PERL_YAML
+	bool "perl-yaml"
+	help
+	  YAML support for perl

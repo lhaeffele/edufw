@@ -1,0 +1,9 @@
+#!/bin/sh
+
+case "$1" in
+	start|'')
+		/sbin/edufw_getconf
+		;;
+	stop)
+		;;
+esac

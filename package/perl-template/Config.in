@@ -1,0 +1,4 @@
+config BR2_PACKAGE_PERL_TEMPLATE
+	bool "perl-template"
+	help
+	  Template Toolkit

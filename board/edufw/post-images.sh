@@ -1,5 +1,6 @@
 #!/bin/sh
 
+rm -f "$BR2_EXTERNAL_EDUFW_PATH/iso/EDUFW_ISO-"*
 . "$BR2_EXTERNAL_EDUFW_PATH/board/edufw/rootfs-overlay/etc/edufw/version"
 touch "$BR2_EXTERNAL_EDUFW_PATH/iso/EDUFW_ISO-$EDUFW_VERSION"
 

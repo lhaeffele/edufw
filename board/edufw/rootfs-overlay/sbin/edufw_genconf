@@ -1,0 +1,77 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use Template;
+use Template::Stash;
+use YAML qw{LoadFile};
+use Sys::Hostname;
+use File::Path qw{make_path};
+use File::Basename;
+use File::Find;
+use File::stat;
+
+my $SRC_DIR = dirname($0).'/../etc/edufw/templates/';
+my $DST_DIR = '';
+
+my $config_file = $ARGV[0] || dirname($0).'/../etc/edufw/edufw-config.yaml';
+my $config = LoadFile($config_file);
+
+my $tt_config = {
+  INCLUDE_PATH => $SRC_DIR,
+  POST_CHOMP   => 1,
+  #PRE_PROCESS  => 'header',
+};
+
+# create Template object
+my $tt = Template->new($tt_config);
+
+
+# define scalar method to return upper case
+$Template::Stash::SCALAR_OPS->{ uc } = sub {
+  my $str = shift;
+  return uc $str;
+};
+
+sub file_from_template {
+    my ($srcfile, $dstfile) = @_;
+    my $dst_data;
+   
+    # Generate file's data from template
+    $tt->process($srcfile, {config => $config}, \$dst_data, binmode => ':utf8')
+        or die $tt->error(), "\n"; 
+
+    my $srcstat = stat($SRC_DIR.'/'.$srcfile)
+        or die "Cannot stat file $srcfile: $!";
+
+    # Write file's data into destination file
+    open my $fh, ">", $dstfile
+        or die "Cannot open $dstfile for writing: $!";
+    # Change permissions on dst file
+    chmod($srcstat->mode & 07777, $fh)
+	or die "Cannot set mode on $dstfile: $!";
+    # change owner on dst file
+    chown($srcstat->uid, $srcstat->gid, $fh)
+	or die "Cannot set owner on $dstfile: $!";
+    print $fh $dst_data
+        or die "Cannot write data to file $dstfile: $!";
+    close $fh
+        or die "Cannot close file $dstfile: $!";
+}
+
+my $src_dir_size = length ($SRC_DIR);
+sub generate {
+    if (-f $_) {
+        my $srcfile=$File::Find::name;
+        my ($d) = substr($srcfile, $src_dir_size);
+        my $dstfile=$DST_DIR.'/'.$d;
+
+        make_path(dirname($dstfile));
+
+        print STDERR 'Generating: ',$dstfile,' from ',$srcfile,"\n";
+        file_from_template($d, $dstfile);
+    }
+}
+
+find({ wanted => \&generate, no_chdir => 1}, $SRC_DIR);

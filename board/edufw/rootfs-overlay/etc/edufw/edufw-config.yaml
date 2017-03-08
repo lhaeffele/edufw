@@ -1,0 +1,141 @@
+system:
+    name: EDUFW
+    snmp:
+        - community: public
+          mode: ro
+    auth:
+        user:
+            - login: admin
+              pass: admin
+              privileges: superuser
+network:
+    interfaces:
+        - eth0:
+            method: dhcp
+#            method: static
+#            address: 192.168.0.254
+#            netmask: 255.255.0.0
+#            mtu: 1456
+        - eth1:
+            method: static
+            address: 192.168.255.254
+            netmask: 255.255.255.0
+router:
+#    static:
+#        - dst: 0.0.0.0/0
+#          gateway: 192.168.0.1
+#        - dst: 10.0.0.0/8
+#          gateway: 192.168.255.250
+#          mtu: 1456
+#          advmss: 1416
+#    rip: TODO
+#    ospf: TODO
+services:
+    dhcp:
+        - interface: eth1
+          network: 192.168.255.0
+          netmask: 255.255.255.0
+          range: 192.168.255.1 - 192.168.255.199
+          gateway: 192.168.255.254
+firewall:
+    services:
+        any-tcp:
+            protocol: tcp
+            ports: [ '0:65535' ]
+        any-udp:
+            protocol: udp
+            ports: [ '0:65535' ]
+        ssh: 
+            protocol: tcp
+            ports: 22
+        echo-request: 
+            protocol: icmp
+            icmp_type: 8
+#        icmp: 
+#            protocol: icmp
+#        web: 
+#            protocol: tcp
+#            ports: [ 80, 443 ]
+#        mail-in:
+#            protocol: tcp
+#            ports: [ 110, 143, 995, 993 ]
+#        mail-out:
+#            protocol: tcp
+#            ports: [ 25, 465 ]
+#        dns-tcp:
+#            protocol: tcp
+#            port: 53
+#        dns-udp:
+#            protocol: udp
+#            port: 53
+    ipv4:
+        extremity:
+            lo: 127.0.0.1/32
+            any: 0.0.0.0/0
+            eth1-ipv4: 192.168.255.254
+        filter:
+            - name: LOG_ACCEPT
+              rules:
+                    - target: LOG
+                      log-prefix: '[IPTABLES ACCEPT] : '
+                      log-level: 7
+                      limit: 3/sec
+                      limit_burst: 5
+                    - target: ACCEPT
+            - name: LOG_DROP
+              rules:
+                    - target: LOG
+                      log-prefix: '[IPTABLES DROP] : '
+                      log-level: 7
+                      limit: 3/sec
+                      limit_burst: 5
+                    - target: DROP
+            - name: INPUT
+              policy: DROP
+              rules:
+                    - iint: lo
+                      target: ACCEPT
+                    - services: echo-request
+                      limit: 3/sec
+                      limit_burst: 3
+                      target: ACCEPT
+                    - iint: eth0
+                      services: ssh
+                      limit: 3/sec
+                      limit_burst: 3
+                      target: ACCEPT
+                    - iint: eth1
+                      dst: eth1-ipv4
+                      src: any
+                      services:
+                          - any-tcp
+                          - any-udp
+                      target: ACCEPT
+                    - target: LOG_DROP
+            - name: FORWARD
+              policy: DROP
+              rules:
+                    - iint: eth1
+                      oint: eth0
+                      services:
+                          - any-tcp
+                          - any-udp
+                          - echo-request
+                      target: LOG_ACCEPT
+                    - target: LOG_DROP
+            - name: OUTPUT
+              policy: ACCEPT
+              rules:
+                    - oint: eth0
+                      target: LOG_ACCEPT
+        nat:
+            - name: POSTROUTING
+              policy: ACCEPT
+              rules:
+                    - oint: eth0
+                      target: MASQUERADE
+#        mangle:
+#    ipv6:
+#        filter:
+#        nat:
+#        mangle:

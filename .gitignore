@@ -1,4 +1,5 @@
 edufw_sda1.image
-iso/EDUFW_ISO-0.1-dev
+iso/EDUFW_ISO-*
 iso/bzImage
 iso/initrd.bz2
+*.swp

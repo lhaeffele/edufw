@@ -19,19 +19,38 @@ To install edufw:
 - connect to the edufw-server with "`edufw_enroll`" command
 Everything else will be done from the edufw-server ...
 
+## Upgrading
+Edufw upgrades should be done via edufw-server.
+
+If your really need to upgrade it manually:
+- download the iso file of the new version of edufw on the firewall (via wget or an usb stick)
+- run the "`edufw_installimage <ISOFILE>`" command
+
 ## Rebuild an image
 To rebuild an image from edufw:
 - download this project
 - download buildroot from https://buildroot.org/download.html and install it anywhere
 - in the buildroot main directory, start these commands :
 ```
-make defconfig BR2_EXTERNAL=\<YOUR_EDUFW_REPOSITORY\> BR2_DEFCONFIG=\<YOUR_EDUFW_REPOSITORY\>/configs/edufw_defconfig
-make grub-tools-rebuild
+EDUFW_PATH=<PATH_TO_EDUFW_REPOSITORY>
+make defconfig BR2_EXTERNAL=$EDUFW_PATH BR2_DEFCONFIG=$EDUFW_PATH/configs/edufw_defconfig
+make
+make rsyslog-rebuild
 make
 ```
+Be careful ... the first compilation can be very long (about 1 hour and 40 minutes on my laptop).
 
-## Upgrading
-Edufw upgrades should be done via edufw-server.
-If your really need to upgrade it manually:
-- download the iso file of the new version of edufw on the firewall (via wget or an usb stick)
-- run the "`edufw_installimage \<ISOFILE\>`" command
+The iso image will be built in output/images/ in this buildroot main directory
+
+## Roadmap
+- Version 0.1: boot and install on harddrive
+- Version 0.2: use a local configuration file for simple IP config, syslog, dhcp server and simple IPv4 firewalling rules
+- Version 0.3: use the edufw-server (enroll + update firmware)
+- Version 0.4: allow more complicated IP configurations
+- Version 0.5: simple http proxy
+- Version 0.6: proxy with url filtering
+- Version 0.7: implement snmp
+- Version 0.8: use the edufw-server for all config parameters
+- Version 0.9: allow IPv6 firewalling rules
+
+## Configuration

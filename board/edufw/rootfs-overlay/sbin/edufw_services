@@ -1,0 +1,23 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use YAML::XS qw{LoadFile};
+use File::Basename;
+
+my $services_file = dirname($0).'/../etc/edufw/edufw-services.yaml';
+my $services = LoadFile($services_file);
+
+my $arg = $ARGV[0];
+
+if ($arg eq 'stop') {
+    for my $service (reverse @{$services->{services}}) {
+        print "service $service $arg\n";
+    }
+}
+else {
+    for my $service (@{$services->{services}}) {
+        print "service $service $arg\n";
+    }
+}

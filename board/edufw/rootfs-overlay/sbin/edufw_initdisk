@@ -1,32 +1,24 @@
 #!/bin/sh
 
-DISKS=`LANG='' parted -l 2>/dev/null | grep '^Disk /dev/' | sed 's/^Disk //'`
-OPTIONS=`echo "$DISKS" | awk -F: '{print $1}'`
-
 die() {
 	echo "$1" >&2
 	exit 1
 }
 
 . /etc/edufw/version
+. /etc/edufw/functions
 
-# Find installation media
 echo "Looking for installation media ..."
-for DEV in `ls /dev/sd* /dev/sr*`; do
-    if mount "$DEV" /mnt >/dev/null 2>&1; then
-        if [ -e "/mnt/EDUFW_ISO-$EDUFW_VERSION" ]; then
-            INSTALL_DEV="$DEV"
-        fi
-        umount "$DEV" >/dev/null 2>&1
-        [ "$INSTALL_DEV" != "" ] && break
-    fi
-done
+INSTALL_DEV=`find_install_media`
 
 if [ "$INSTALL_DEV" == "" ]; then
     die "Cannot find installation media"
 else
     echo "Installation media found on $INSTALL_DEV"
 fi
+
+DISKS=`LANG='' parted -l 2>/dev/null | grep '^Disk /dev/' | sed 's/^Disk //' | grep -v "^$INSTALL_DEV:"`
+OPTIONS=`echo "$DISKS" | awk -F: '{print $1}'`
 
 while [ "$TARGET_DISK" == "" ]; do
     echo ''
@@ -54,14 +46,26 @@ if [ "$resp" == "y" ]; then
     
     # Create a unique big partition
     SIZE=`echo "$DISKS" | grep "^$TARGET_DISK" | awk -F: '{print $2}'`
-    parted -s "$TARGET_DISK" mkpart primary fat32 10MB $SIZE \
-    	|| die "Cannot create partition on $TARGET_DISK: $!"
+    MB=`echo "$SIZE" | sed 's/MB$//'`
+    if [ "$MB" -lt 2048 ]; then
+        FIRST_SIZE=`expr "$MB" / 2`"MB"
+    else
+        FIRST_SIZE=1024MB
+    fi
+    parted -s "$TARGET_DISK" mkpart primary 10MB $FIRST_SIZE \
+    	|| die "Cannot create first partition on $TARGET_DISK: $!"
+    parted -s "$TARGET_DISK" mkpart primary $FIRST_SIZE $SIZE \
+    	|| die "Cannot create second partition on $TARGET_DISK: $!"
     parted -s "$TARGET_DISK" set 1 boot on \
     	|| die "Cannot set partition 1 as bootable on $TARGET_DISK: $!"
     
     # Create filesystem
-    mkfs.ext2 -L EDUFW "${TARGET_DISK}1" \
-    	|| die "Cannot create ext2 fs on ${TARGET_DISK}1: $!"
+    mkfs.ext3 -L EDUFW "${TARGET_DISK}1" \
+    	|| die "Cannot create ext3 fs on ${TARGET_DISK}1: $!"
+    
+    # Create filesystem
+    mkfs.ext4 -L EDUFW_LOG "${TARGET_DISK}2" \
+    	|| die "Cannot create ext4 fs on ${TARGET_DISK}2: $!"
     
     mount LABEL=EDUFW /mnt \
     	|| die "Cannot mount new fs on /mnt: $!"
@@ -71,13 +75,13 @@ if [ "$resp" == "y" ]; then
     	|| die "Cannot install grub on ${TARGET_DISK}: $!"
     
     # Copy ssh keys
-    mkdir /mnt/config/
-    cp /etc/ssh/ssh_host_* /mnt/config/ \
+    mkdir -p /mnt/config/
+    cp -a /etc/ssh/ssh_host_* /mnt/config/ \
     	|| die "Cannot copy ssh keys on ${TARGET_DISK}1/config/: $!"
     
     umount /mnt \
     	|| die "Cannot umount new fs on /mnt: $!"
     
-    /sbin/edufw_installimage /dev/sr0 "$EDUFW_VERSION"
+    /sbin/edufw_installimage "$INSTALL_DEV" "$EDUFW_VERSION"
 
 fi
