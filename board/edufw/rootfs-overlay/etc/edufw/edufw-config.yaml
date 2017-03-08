@@ -10,13 +10,13 @@ system:
               privileges: superuser
 network:
     interfaces:
-        - eth0:
+        eth0:
             method: dhcp
 #            method: static
 #            address: 192.168.0.254
 #            netmask: 255.255.0.0
 #            mtu: 1456
-        - eth1:
+        eth1:
             method: static
             address: 192.168.255.254
             netmask: 255.255.255.0
@@ -32,11 +32,13 @@ router:
 #    ospf: TODO
 services:
     dhcp:
-        - interface: eth1
-          network: 192.168.255.0
-          netmask: 255.255.255.0
-          range: 192.168.255.1 - 192.168.255.199
-          gateway: 192.168.255.254
+        subnet: 
+            - interface: eth1
+              network: 192.168.255.0
+              netmask: 255.255.255.0
+              range: 192.168.255.1:192.168.255.199
+              gateway: 192.168.255.254
+              domain_name: example.com
 firewall:
     services:
         any-tcp:

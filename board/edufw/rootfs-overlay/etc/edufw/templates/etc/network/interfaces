@@ -1,0 +1,15 @@
+auto lo
+iface lo inet loopback
+
+[% FOREACH net IN config.network.interfaces.keys %]
+auto [% net +%]
+iface [% net %] inet [% config.network.interfaces.item(net).method +%]
+[% IF config.network.interfaces.item(net).method == 'static' %]
+  address [% config.network.interfaces.item(net).address +%]
+  netmask [% config.network.interfaces.item(net).netmask +%]
+[% IF config.network.interfaces.item(net).defined('mtu') %]
+  mtu [% config.network.interfaces.item(net).mtu +%]
+[% END # IF mtu %]
+[% END # IF static %]
+
+[% END # FOREACH net %]
