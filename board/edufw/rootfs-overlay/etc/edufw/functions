@@ -1,5 +1,14 @@
 #!/bin/sh
 
+error() {
+        echo "$1" >&2
+}
+
+die() {
+        error "$1"
+        exit 1
+}
+
 find_install_media() {
     # Find installation media
     for DEV in `ls /dev/sd* /dev/sr*`; do

@@ -2,11 +2,14 @@
 
 case "$1" in
 	start|'')
-		mkdir -p /var/log/edufw
-		mount LABEL=EDUFW_LOG /var/log/edufw
-		mkdir -p /var/log/edufw/local
-		touch /var/log/edufw/local/secure
-		chmod 700 /var/log/edufw/local/secure
+		. /etc/edufw/functions
+		if ! is_booting_from_iso; then
+			mkdir -p /var/log
+			mount LABEL=EDUFW_LOG /var/log
+			mkdir -p /var/log/local
+			touch /var/log/local/secure
+			chmod 700 /var/log/local/secure
+		fi
 		;;
 	stop)
 		;;

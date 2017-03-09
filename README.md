@@ -11,7 +11,7 @@ To install edufw:
 - download the iso image
 - burn it on a cdrom or write it on a usb stick with dd ("dd if=edifw-version.iso of=/dev/sdb" on linux). Be carefull with this part to avoid destroying a disk of your computer instead of the usb stick
 - boot the firewall on this image
-- once booted, login as root with password "edufw-123456"
+- once booted, login as root with password "edufw1234"
 - run the "`edufw_initdisk`" command to destroy all data on the disk and install edufw
 - unplug the usb stick from the firewall or eject the cdrom
 - run the reboot command to reboot from the disk of your firewall

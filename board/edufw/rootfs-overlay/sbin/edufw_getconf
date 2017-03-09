@@ -1,10 +1,5 @@
 #!/bin/sh
 
-die() {
-	echo "$1" >&2
-	exit 1
-}
-
 . /etc/edufw/version
 . /etc/edufw/functions
 
@@ -19,11 +14,11 @@ mount LABEL=EDUFW /mnt \
 
 # Copy ssh keys
 cp -a /mnt/config/ssh_host_* /etc/ssh/ \
-    || die "Cannot copy ssh keys from LABEL=EDUFW/config/: $!"
+    || error "Cannot copy ssh keys from LABEL=EDUFW/config/: $!"
 
 # Copy config
 cp -a /mnt/config/edufw-config.yaml /etc/edufw/ \
-    || die "Cannot copy config from LABEL=EDUFW/config/edufw-config.yaml: $!"
+    || error "Cannot copy config from LABEL=EDUFW/config/edufw-config.yaml: $!"
 
 umount /mnt \
     || die "Cannot umount LABEL=EDUFW from /mnt: $!"

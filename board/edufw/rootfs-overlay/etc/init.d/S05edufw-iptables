@@ -1,0 +1,12 @@
+#!/bin/sh
+
+case "$1" in
+	start|'')
+		echo "Applying iptables rules from /etc/iptables.rules"
+		/usr/sbin/iptables-restore /etc/iptables.rules
+		;;
+	stop)
+		echo "Saving iptables rules into /etc/iptables.rules"
+		/usr/sbin/iptables-save >/etc/iptables.rules
+		;;
+esac

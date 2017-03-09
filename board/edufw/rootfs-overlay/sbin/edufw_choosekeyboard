@@ -1,0 +1,22 @@
+#!/bin/sh
+
+echo 'Which keyboard are you using ?'
+cd /usr/share/keymaps/i386/
+I=0
+for FMAP in */??.map.gz; do
+    MAP=$(echo "$FMAP" | sed 's:.*/::' | sed 's/\.map\.gz$//')
+    eval "LINE$I=\"\$LINE$I\$MAP     \""
+    I=`expr \( $I + 1 \) % 5`
+done
+
+for I in `seq 0 4`; do
+    eval "echo \"\$LINE$I\""
+done
+
+echo -n 'Please enter your keyboard layout: '
+read resp
+if [ "$resp" == "q" ] || [ "$resp" == "" ]; then
+    exit 1
+fi
+ 
+/usr/bin/loadkeys "$resp"

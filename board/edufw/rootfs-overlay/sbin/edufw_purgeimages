@@ -1,0 +1,24 @@
+#!/bin/sh
+
+. /etc/edufw/functions
+
+EDUFW_MPOINT='/mnt'
+
+mount LABEL=EDUFW "$EDUFW_MPOINT" \
+    || die "Cannot mount $EDUFW_MPOINT: $!"
+
+RUNNING_IMAGE=$(sed 's:.*BOOT_IMAGE=::' </proc/cmdline | sed 's:bzImage.*:bzImage:')
+echo "Currently running image $RUNNING_IMAGE"
+
+ls -t "$EDUFW_MPOINT"/*/bzImage | sed "s:^$EDUFW_MPOINT::" | grep -v "^$RUNNING_IMAGE$" | tail +3 | while read KERNEL; do
+    KERNEL_PATH=$(dirname "$KERNEL")
+    if [ -n "$KERNEL_PATH" ] && [ "$KERNEL_PATH" != "/" ]; then
+        echo "Deleting $KERNEL_PATH"
+        rm -rf "$EDUFW_MPOINT/$KERNEL_PATH"
+    fi
+done
+
+umount "$EDUFW_MPOINT" \
+    || die "Cannot mount $EDUFW_MPOINT: $!"
+
+/sbin/edufw_grubconf_gen

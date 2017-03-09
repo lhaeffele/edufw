@@ -1,10 +1,5 @@
 #!/bin/sh
 
-die() {
-	echo "$1" >&2
-	exit 1
-}
-
 . /etc/edufw/version
 . /etc/edufw/functions
 

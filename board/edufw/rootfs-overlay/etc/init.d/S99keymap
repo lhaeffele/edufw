@@ -1,3 +1,5 @@
 #!/bin/sh
 
-/usr/bin/loadkeys fr
+if [ "$1" == 'start' ]; then
+    timeout -t 10 ../../sbin/edufw_choosekeyboard
+fi

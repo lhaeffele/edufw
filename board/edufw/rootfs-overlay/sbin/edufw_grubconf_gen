@@ -1,12 +1,9 @@
 #!/bin/sh
 
+. /etc/edufw/functions
+
 EDUFW_MPOINT='/mnt'
 GRUB_CFG="$EDUFW_MPOINT"'/boot/grub/grub.cfg'
-
-die() {
-        echo "$1" >&2
-        exit 1
-}
 
 mount LABEL=EDUFW "$EDUFW_MPOINT" \
     || die "Cannot mount $EDUFW_MPOINT: $!"
@@ -21,8 +18,9 @@ set serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1
 
 _END_
 
-for KERNEL in `ls -t */bzImage`; do
-    KERNEL_PATH=$(dirname $KERNEL)
+ls -t */bzImage | while read KERNEL; do
+    #echo "KERNEL: $KERNEL"
+    KERNEL_PATH=$(dirname "$KERNEL")
     if [ -f "$KERNEL_PATH/initrd.bz2" ]; then
 	    echo "Found version $KERNEL_PATH"
 	    cat >>"$GRUB_CFG" <<_END_
