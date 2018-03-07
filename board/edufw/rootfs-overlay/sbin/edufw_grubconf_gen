@@ -1,15 +1,14 @@
 #!/bin/sh
 
-. /etc/edufw/functions
+[ -f /etc/edufw/version ] && . /etc/edufw/version
+[ -f /etc/edufw/functions ] && . /etc/edufw/functions
+[ -f "$HOME/.edufw/version" ] && . "$HOME/.edufw/version"
+[ -f "$HOME/.edufw/functions" ] && . "$HOME/.edufw/functions"
 
-EDUFW_MPOINT='/mnt'
-GRUB_CFG="$EDUFW_MPOINT"'/boot/grub/grub.cfg'
+GRUB_CFG="$EDUFW_MP"'/boot/grub/grub.cfg'
 
-mount LABEL=EDUFW "$EDUFW_MPOINT" \
-    || die "Cannot mount $EDUFW_MPOINT: $!"
-
-cd "$EDUFW_MPOINT" \
-    || die "Cannot enter $EDUFW_MPOINT directory: $!"
+cd "$EDUFW_MP" \
+    || die "Cannot enter $EDUFW_MP directory: $!"
 
 cat >"$GRUB_CFG" <<_END_
 set timeout=10
@@ -33,7 +32,3 @@ menuentry "EduFW $KERNEL_PATH" {
 _END_
     fi
 done
-
-cd /
-umount "$EDUFW_MPOINT" \
-    || die "Cannot umount $EDUFW_MPOINT: $!"

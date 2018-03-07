@@ -1,0 +1,34 @@
+#!/bin/sh
+
+[ -f /etc/edufw/version ] && . /etc/edufw/version
+[ -f /etc/edufw/functions ] && . /etc/edufw/functions
+[ -f "$HOME/.edufw/version" ] && . "$HOME/.edufw/version"
+[ -f "$HOME/.edufw/functions" ] && . "$HOME/.edufw/functions"
+
+CONF_B64="$1"
+CONF_SHA256="$2"
+
+TMPFILE=$(tempfile)
+
+echo "$CONF_B64" | base64 -d >"$TMPFILE" 2>/dev/null
+CALC_SHA256=$(sha256sum <"$TMPFILE" | cut -f1 -d' ')
+
+if [ "$CONF_SHA256" != "$CALC_SHA256" ]; then
+    # Hash does not match => thraw an error
+    echo "Error : sha256 does not match" >&2
+    echo "Announed sha256 : $CONF_SHA256" >&2
+    echo "Calculated sha256 : $CALC_SHA256" >&2
+    exit 1
+fi
+
+# Hash matches => installing config
+echo "Installing config in /etc/edufw/edufw-config.yaml"
+
+# Copy new config file in /etc/edufw/edufw-config.yaml
+cp -a "$TMPFILE" /etc/edufw/edufw-config.yaml
+
+echo "Generating config files from templates"
+/sbin/edufw_conf_gen
+
+echo "Saving configuration"
+BACKUP_NAME="$CONF_SHA256" /sbin/edufw_conf_save

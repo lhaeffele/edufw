@@ -1,0 +1,12 @@
+#!/bin/sh
+
+[ -f /etc/edufw/version ] && . /etc/edufw/version
+[ -f /etc/edufw/functions ] && . /etc/edufw/functions
+[ -f "$HOME/.edufw/version" ] && . "$HOME/.edufw/version"
+[ -f "$HOME/.edufw/functions" ] && . "$HOME/.edufw/functions"
+
+sleep $EDUFW_FIRMWARE_CHECK_TIMEOUT
+
+[ -f "$EDUFW_FIRMWARE.OK" ] && exit 0
+
+edufw_firmware_rollback

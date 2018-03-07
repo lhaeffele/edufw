@@ -1,7 +1,9 @@
 #!/bin/sh
 
-. /etc/edufw/version
-. /etc/edufw/functions
+[ -f /etc/edufw/version ] && . /etc/edufw/version
+[ -f /etc/edufw/functions ] && . /etc/edufw/functions
+[ -f "$HOME/.edufw/version" ] && . "$HOME/.edufw/version"
+[ -f "$HOME/.edufw/functions" ] && . "$HOME/.edufw/functions"
 
 echo "Looking for installation media ..."
 INSTALL_DEV=`find_install_media`
@@ -40,7 +42,7 @@ if [ "$resp" == "y" ]; then
     parted -s "$TARGET_DISK" mklabel msdos
     
     # Create a unique big partition
-    SIZE=`echo "$DISKS" | grep "^$TARGET_DISK" | awk -F: '{print $2}'`
+    SIZE=`echo "$DISKS" | grep "^$TARGET_DISK" | awk -F: '{print $2}' | awk -F. '{print $1}'`
     MB=`echo "$SIZE" | sed 's/MB$//'`
     if [ "$MB" -lt 2048 ]; then
         FIRST_SIZE=`expr "$MB" / 2`"MB"
@@ -70,13 +72,13 @@ if [ "$resp" == "y" ]; then
     	|| die "Cannot install grub on ${TARGET_DISK}: $!"
     
     # Copy ssh keys
-    mkdir -p /mnt/config/
-    cp -a /etc/ssh/ssh_host_* /mnt/config/ \
+    mkdir -p /mnt/config/ssh/
+    cp -a /etc/ssh/ssh_host_* /mnt/config/ssh/ \
     	|| die "Cannot copy ssh keys on ${TARGET_DISK}1/config/: $!"
     
     umount /mnt \
     	|| die "Cannot umount new fs on /mnt: $!"
     
-    /sbin/edufw_installimage "$INSTALL_DEV" "$EDUFW_VERSION"
+    /sbin/edufw_installimage "$INSTALL_DEV" "${EDUFW_VERSION}-${BUILDROOT_VERSION}"
 
 fi

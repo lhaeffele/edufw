@@ -1,0 +1,26 @@
+#!/bin/sh
+
+[ -f /etc/edufw/version ] && . /etc/edufw/version
+[ -f /etc/edufw/functions ] && . /etc/edufw/functions
+[ -f "$HOME/.edufw/version" ] && . "$HOME/.edufw/version"
+[ -f "$HOME/.edufw/functions" ] && . "$HOME/.edufw/functions"
+
+echo "Copying config to hard disk ..."
+
+# BACKUP_NAME can be set by caller
+[ -z "$BACKUP_NAME" ] && BACKUP_NAME="$(date +%Y%m%d%H%M%S).$$"
+
+# Backup old config
+mkdir -p "$EDUFW_MP"/backup/
+cp "$EDUFW_MP"/config/edufw/edufw-config.yaml "$EDUFW_MP"/backup/edufw-config.yaml."$BACKUP_NAME" \
+    || error "Cannot backup config from LABEL=EDUFW/config/edufw/edufw-config.yaml to LABEL=EDUFW/backup/edufw-config.yaml.$BACKUP_NAME: $!"
+
+# Copy config
+cp -a /etc/edufw/edufw-config.yaml "$EDUFW_MP"/config/edufw/edufw-config.yaml \
+    || error "Cannot copy config from LABEL=EDUFW/config/edufw/edufw-config.yaml: $!"
+
+ls -t "$EDUFW_MP"/backup/edufw-config.yaml.* | sed "s:^$EDUFW_MP/config/::" | tail +3 | while read CONFIG_FILE; do
+    echo "Deleting $EDUFW_MP/backup/$CONFIG_FILE"
+    echo rm -f "$EDUFW_MP/backup/$CONFIG_FILE"
+done
+

@@ -1,0 +1,14 @@
+#!/bin/sh
+
+[ -f /etc/edufw/version ] && . /etc/edufw/version
+[ -f /etc/edufw/functions ] && . /etc/edufw/functions
+[ -f "$HOME/.edufw/version" ] && . "$HOME/.edufw/version"
+[ -f "$HOME/.edufw/functions" ] && . "$HOME/.edufw/functions"
+
+[ -f "$EDUFW_FIRMWARE.OK" ] && exit 0
+
+echo "Rollbacking firmware"
+mv "$EDUFW_FIRMWARE.old" "$EDUFW_FIRMWARE" \
+    && echo "Rebooting in 30s ..." \
+    && sleep 30 \
+    && init 6

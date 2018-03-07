@@ -1,0 +1,209 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use Switch;
+use AnyEvent;
+use AnyEvent::Log;
+use AnyEvent::Handle;
+use AnyEvent::Socket;
+use MIME::Base64 qw{encode_base64url};
+
+use IPC::Run qw{run timeout};
+
+my $CRLF= "\015\012";
+
+my $PROTOCOL_VERSION = '0.1';
+my $FIRMWARE_VERSION = '7112f845746a59b7f0182a8932ea4cf9174f49d038c7ab44a76cdb677cc8f88f';
+my $CONFIG_VERSION = 'eedbb941da3ea6f467b890611c7ac67e40053cd5192e2b86964809be75eccf35';
+
+my $MYHOSTNAME = qx{hostname};
+chomp($MYHOSTNAME);
+
+my $AT_TIMEOUT = 10; # Seconds
+my $CMD_TIMEOUT = 10; # Seconds
+
+#AnyEvent::Log::ctx->level("info");
+AnyEvent::Log::ctx->log_to_warn;
+my $cv = AnyEvent->condvar;
+
+my $EDUFW_SERVER = $ARGV[0] || $ENV{'EDUFW_AGENT_SERVER'} || 'localhost';
+my $EDUFW_PORT = $ARGV[1] || 32323;
+my ($host, $port) = ($EDUFW_SERVER, $EDUFW_PORT);
+
+sub wr {
+    my ($handle, $id, $message) = @_;
+    # Replace \n with %
+    $message =~ s{\n}{%}gs;
+
+    # Send message to server
+    $handle->push_write("$id: $message$CRLF");
+
+    # Log message
+    AE::log debug => "me: $message";
+}
+
+sub doat {
+    my ($handle, $cmd_id, $atdate, $cmd, $desc) = @_;
+
+    my ($in, $out, $err);
+    my @atcommand = ('at', split(' ',$atdate));
+    AE::log debug => "AT command: ".join " ", @atcommand;
+    $in = "$cmd";
+    if (run(\@atcommand, \$in, \$out, \$err, timeout($AT_TIMEOUT))) {
+        AE::log debug => "AT STDOUT: $out";
+        AE::log debug => "AT STDERR: $err";
+        my ($atid) = $err =~ m{job (\d+) at}s;
+        if ($atid) {
+            wr($handle, $cmd_id, "$desc PROGRAMMED WITH ID $atid");
+        }
+        else {
+            wr($handle, $cmd_id, "ERROR Cannot program command at $atdate: $!");
+        }
+    }
+    else {
+        wr($handle, $cmd_id, "ERROR Cannot start at command: $err");
+    }
+}
+
+sub cancelat {
+    my ($handle, $cmd_id, $atid) = @_;
+
+    my @atrmcommand = ('atrm', $atid);
+    my ($in, $out, $err);
+    if (run(\@atrmcommand, \$in, \$out, \$err, timeout($AT_TIMEOUT))) {
+        AE::log debug => "ATRM STDOUT: $out";
+        AE::log debug => "ATRM STDERR: $err";
+        wr($handle, $cmd_id, "CANCELED $atid");
+    }
+    else {
+        wr($handle, $cmd_id, "ERROR Cannot cancel $atid: $!");
+    }
+}
+
+sub listat {
+    my ($handle, $cmd_id) = @_;
+
+    my @atcommand = ('at', '-l');
+    my ($in, $out, $err);
+    if (run(\@atcommand, \$in, \$out, \$err, timeout($AT_TIMEOUT))) {
+        AE::log debug => "AT STDOUT: $out";
+        AE::log debug => "AT STDERR: $err";
+        my @atlines = split "\n", $out;
+        my @atids = map { m{^(\d+)} } @atlines;
+        wr($handle, $cmd_id, "PROGS ".join(" ", @atids));
+    }
+    else {
+        wr($handle, $cmd_id, "ERROR Cannot list progs: $!");
+    }
+}
+
+sub validate_firmware {
+    my @atcommand = ('edufw_firmware_validate');
+    my ($in, $out, $err);
+    if (run(\@atcommand, \$in, \$out, \$err, timeout($CMD_TIMEOUT))) {
+        AE::log debug => @atcommand[0]." STDOUT: $out";
+        AE::log debug => @atcommand[0]."AT STDERR: $err";
+        return 1;
+    }
+    else {
+        AE::log error => @atcommand[0]." error: $!";
+    }
+    return;
+}
+
+# simple https-client
+my $handle = AnyEvent::Handle->new(
+    connect  => [$host, $port],
+    tls      => "connect",
+    tls_ctx  => {
+        verify => 1,
+        verify_peername => "EDUFW Server",
+        ca_path   => $ENV{'EDUFW_AGENT_CA_PATH'},
+        method    => "TLSv1_2",
+        cert_file => $ENV{'EDUFW_AGENT_CERT_FILE'},
+        key_file  => $ENV{'EDUFW_AGENT_KEY_FILE'},
+    },
+    on_error => sub {
+        my ($handle, $fatal, $msg) = @_;
+        AE::log error => $msg;
+        $handle->destroy;
+        $cv->send;
+    },
+    on_read => sub {
+        my ($handle) = @_;
+        $handle->push_read(line => sub {
+            use Switch;
+            my (undef, $allline) = @_;
+            chomp($allline);
+            my ($cmd_id, $command) = $allline =~ m/^([^:]*): (.*)$/;
+            chomp($command);
+            AE::log debug => "srv: $command";
+            switch ($command) {
+                case 'PING'     { wr($handle, $cmd_id, 'PONG'); }
+                case 'HOSTNAME' { wr($handle, $cmd_id, 'HOSTNAME '.$MYHOSTNAME); }
+                case /^EDUFW/   {
+                    wr($handle, $cmd_id, "EDUFW VERSION $PROTOCOL_VERSION FIRMWARE $FIRMWARE_VERSION CONFIG $CONFIG_VERSION");
+                    validate_firmware();
+                }
+                case /^HARDWARE_INFO$/ {
+                    my $lshw_b64;
+                    my $lshw = qx{lshw};
+                    if (($? == 0) and $lshw) {
+                        $lshw_b64 = encode_base64url($lshw);
+                        wr($handle, $cmd_id, "HARDWARE $lshw_b64")
+                    }
+                    else {
+                        wr($handle, $cmd_id, "ERROR Cannot execute lshw")
+                    }
+                }
+                case /^FIRMWARE_UPGRADE / {
+                    if (my ($new_fw_name, $new_fw_url, $new_fw_sha256_hex, $atdate) = $command =~ /^FIRMWARE_UPGRADE ([^ ]+) ([^ ]+) ([^ ]+) AT (.+)$/) {
+                        doat($handle, $cmd_id, $atdate, "edufw_firmware_upgrade $new_fw_name $new_fw_url $new_fw_sha256_hex", 'FIRMWARE_UPGRADE');
+                    }
+                    else {
+                        wr($handle, $cmd_id, "ERROR Cannot understand command: $command");
+                    }
+                }
+                case /^LIST_PROGS$/ {
+                    listat($handle, $cmd_id);
+                }
+                case /^CANCEL (\d+)$/ {
+                    if (my ($atid) = $command =~ /^CANCEL (\d+)$/) {
+                        cancelat($handle, $cmd_id, $atid);
+                    }
+                }
+                case /^REBOOT AT/ {
+                    if (my ($atdate) = $command =~ /^REBOOT AT (.+)$/) {
+                        doat($handle, $cmd_id, $atdate, 'edufw_reboot', 'REBOOT');
+                    }
+                    else {
+                        wr($handle, $cmd_id, "ERROR Cannot understand command: $command");
+                    }
+                }
+                case /^CONF_LOAD / {
+                    if (my ($new_conf_b64, $new_conf_sha256_hex, $atdate) = $command =~ /^CONF_LOAD (\w+) (\w+) AT (.*)$/) {
+                        doat($handle, $cmd_id, $atdate, "edufw_conf_load $new_conf_b64 $new_conf_sha256_hex", 'CONF_LOAD');
+                    }
+                    else {
+                        wr($handle, $cmd_id, "ERROR Cannot understand command: $command");
+                    }
+                }
+                case /^CONF_ROLLBACK / {
+                    if (my ($new_conf_sha256_hex, $atdate) = $command =~ /^CONF_ROLLBACK (\w+) AT (.+)$/) {
+                        doat($handle, $cmd_id, $atdate, "edufw_conf_rollback $new_conf_sha256_hex", 'CONF_ROLLBACK');
+                    }
+                    else {
+                        wr($handle, $cmd_id, "ERROR Cannot understand command: $command");
+                    }
+                }
+                else {
+                  wr($handle, $cmd_id, "ERROR unknown command $command")
+                }
+            }
+        });
+    },
+);
+
+$cv->recv;

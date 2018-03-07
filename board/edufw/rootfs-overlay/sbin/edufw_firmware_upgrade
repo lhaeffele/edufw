@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# Args : firmawre_name firmware_url firmware_sha256
+FW_NAME="$1"
+FW_URL="$2"
+FW_SHA256="$3"
+
+[ -f /etc/edufw/version ] && . /etc/edufw/version
+[ -f /etc/edufw/functions ] && . /etc/edufw/functions
+[ -f "$HOME/.edufw/version" ] && . "$HOME/.edufw/version"
+[ -f "$HOME/.edufw/functions" ] && . "$HOME/.edufw/functions"
+
+FIRMWARE_DIR="$EDUFW_MP/firmwares"
+
+# Create destination directory
+mkdir -p "$FIRMWARE_DIR"
+TMPFILE=$(tempfile -p "FIRMWARE" -d "$FIRMWARE_DIR")
+
+# Downloading firmware to temporary file
+echo "Downloading $FW_NAME"
+wget -o "$TMPFILE" "$FW_URL" \
+  || die "Cannot download $FW_URL to $TMPFILE"
+
+# Backup old firmware
+echo "Backup old firmware"
+cp -a "$EDUFW_FIRMWARE" "$EDUFW_FIRMWARE.old" \
+  || die "Cannot backup old firmware"
+
+# Move firmare to standard destination
+if mv $TMPFILE "$EDUFW_FIRMWARE" then
+  # Remove firmware validation
+  rm "$EDUFW_FIRMWARE.ok"
+
+  # Reboot since everything seems OK
+  reboot
+
+  # On UNIX, saying nothing and returning 0 means everything is OK
+  exit 0
+
+else
+  # firmware cannot be moved
+  error "Cannot move $TMPFILE to $EDUFW_MP/kernel.img"
+  error "Trying to restore old firmware ..."
+
+  # Trying to restore previous firmware
+  if mv "$EDUFW_FIRMWARE.old" "$EDUFW_FIRMWARE"; then
+    # Previous firmware restored
+    error "Old firmware restored"
+  else
+    # Previous firmware could not be restored
+    die "Cannot restore old firmware: $!
+You should not try to reboot without checking if everything is OK"
+  fi
+fi
+
+exit 1

@@ -1,55 +1,57 @@
 #!/bin/sh
 
-. /etc/edufw/functions
+[ -f /etc/edufw/version ] && . /etc/edufw/version
+[ -f /etc/edufw/functions ] && . /etc/edufw/functions
+[ -f "$HOME/.edufw/version" ] && . "$HOME/.edufw/version"
+[ -f "$HOME/.edufw/functions" ] && . "$HOME/.edufw/functions"
 
-EDUFW_IMAGE="$1"
-EDUFW_VERSION="$2"
-IMAGE_MPOINT='/cd'
-EDUFW_MPOINT='/mnt'
+EDUFW_IMAGE="$2"
+EDUFW_VERSION="$1"
+IMAGE_MP='/cd'
 
-mkdir -p "$IMAGE_MPOINT"
+mkdir -p "$IMAGE_MP"
 if echo "$EDUFW_IMAGE" | grep -q -e '^/dev/'; then
-    mount "$EDUFW_IMAGE" "$IMAGE_MPOINT" \
-        || die "Cannot mount $IMAGE_MPOINT: $!"
+    mount "$EDUFW_IMAGE" "$IMAGE_MP" \
+        || die "Cannot mount $IMAGE_MP: $!"
 else
-    mount -o loop "$EDUFW_IMAGE" "$IMAGE_MPOINT" \
-        || die "Cannot mount $IMAGE_MPOINT: $!"
+    mount -o loop "$EDUFW_IMAGE" "$IMAGE_MP" \
+        || die "Cannot mount $IMAGE_MP: $!"
 fi
 
 if [ -z "$EDUFW_VERSION" ]; then
-    EDUFW_VERSION=`ls $IMAGE_MPOINT/EDUFW_ISO* | head -1 | sed 's/.*EDUFW_ISO-//'`
+    EDUFW_VERSION=`ls $IMAGE_MP/EDUFW_ISO* | head -1 | sed 's/.*EDUFW_ISO-//'`
 fi
 
-mount LABEL=EDUFW "$EDUFW_MPOINT" \
-    || die "Cannot mount $EDUFW_MPOINT: $!"
+mount LABEL=EDUFW "$EDUFW_MP" \
+    || die "Cannot mount $EDUFW_MP: $!"
 
-if [ -d "$EDUFW_MPOINT"/"$EDUFW_VERSION" ]; then
-    echo "Directory "$EDUFW_MPOINT"/"$EDUFW_VERSION" already exists"
+if [ -d "$EDUFW_MP"/"$EDUFW_VERSION" ]; then
+    echo "Directory "$EDUFW_MP"/"$EDUFW_VERSION" already exists"
     EDUFW_VERSION="${EDUFW_VERSION}_`date +%Y%m%d%H%M%S`"
     echo "Using $EDUFW_VERSION as version number"
 fi
 
-if [ -d "$EDUFW_MPOINT"/"$EDUFW_VERSION" ]; then
-    die "Directory "$EDUFW_MPOINT"/"$EDUFW_VERSION" already exists"
+if [ -d "$EDUFW_MP"/"$EDUFW_VERSION" ]; then
+    die "Directory "$EDUFW_MP"/"$EDUFW_VERSION" already exists"
 fi
 
-mkdir -p "$EDUFW_MPOINT"/"$EDUFW_VERSION"
+mkdir -p "$EDUFW_MP"/"$EDUFW_VERSION"
 
-if cp "$IMAGE_MPOINT"/bzImage "$EDUFW_MPOINT"/"$EDUFW_VERSION"/ \
-	&& cp "$IMAGE_MPOINT"/initrd.bz2 "$EDUFW_MPOINT"/"$EDUFW_VERSION"/
+if cp "$IMAGE_MP"/bzImage "$EDUFW_MP"/"$EDUFW_VERSION"/ \
+	&& cp "$IMAGE_MP"/initrd.bz2 "$EDUFW_MP"/"$EDUFW_VERSION"/
 then
     echo "Installation OK"
 else
     echo "Installation Error => deleting /$EDUFW_VERSION/bzImage and $EDUFW_VERSION/initrd.bz2"
-    rm -f "$EDUFW_MPOINT"/"$EDUFW_VERSION"/bzImage >/dev/null 2>&1
-    rm -f "$EDUFW_MPOINT"/"$EDUFW_VERSION"/initrd.bz2 >/dev/null 2>&1
-    rmdir "$EDUFW_MPOINT"/"$EDUFW_VERSION"/ >/dev/null 2>&1
+    rm -f "$EDUFW_MP"/"$EDUFW_VERSION"/bzImage >/dev/null 2>&1
+    rm -f "$EDUFW_MP"/"$EDUFW_VERSION"/initrd.bz2 >/dev/null 2>&1
+    rmdir "$EDUFW_MP"/"$EDUFW_VERSION"/ >/dev/null 2>&1
 fi
 
-umount "$IMAGE_MPOINT" \
-    || die "Cannot mount $IMAGE_MPOINT: $!"
+umount "$IMAGE_MP" \
+    || die "Cannot mount $IMAGE_MP: $!"
 
-umount "$EDUFW_MPOINT" \
-    || die "Cannot mount $EDUFW_MPOINT: $!"
+umount "$EDUFW_MP" \
+    || die "Cannot mount $EDUFW_MP: $!"
 
 /sbin/edufw_grubconf_gen

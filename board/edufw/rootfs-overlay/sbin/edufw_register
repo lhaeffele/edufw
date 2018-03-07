@@ -1,0 +1,58 @@
+#!/bin/sh
+
+[ -f /etc/edufw/version ] && . /etc/edufw/version
+[ -f /etc/edufw/functions ] && . /etc/edufw/functions
+[ -f "$HOME/.edufw/version" ] && . "$HOME/.edufw/version"
+[ -f "$HOME/.edufw/functions" ] && . "$HOME/.edufw/functions"
+
+RSA_BITS=2048
+WGET="wget"
+MAXDAYS="7"
+
+REG_SERVER_FILE=$(get_config_file ".regserver.txt")
+REGID_FILE=$(get_config_file "regid.conf")
+PASS_FILE=$(get_config_file ".regpass.txt")
+EDUFW_CA_DIR=$(get_config_file "ca")
+KEY_FILE=$(get_config_file "cert.key")
+REQ_FILE="/tmp/cert.req"
+
+REG_SERVER=$(cat "$REG_SERVER_FILE")
+
+[ -z "$REG_SERVER" ] && die "Registration server not defined"
+
+if [ -s "$REGID_FILE" ]; then
+    . "$REGID_FILE"
+    if [ -n "$regid" ]; then
+        echo "Already registered as id $regid" >&2
+        if [ $(find "$REGID_FILE" -mtime +"$MAXDAYS" | wc -l) -ge 1 ]; then
+            echo "Registration is older than $MAXDAYS days" >&2
+            echo "Send a new registration" >&2
+            rm "$REGID_FILE"
+        else
+            exit 1
+        fi
+    fi
+fi
+
+DEVICE=$(ip route | grep 'default via' | awk '{print $5}')
+MAC=$(ip ad sh dev "$DEVICE" | grep /ether | awk '{print $2}')
+if [ -z "$MAC" ]; then MAC=00:00:00:00:00:00; fi
+PASS=$(cat "$PASS_FILE")
+
+URLENCODED_MAC=`urlencode "$MAC"`
+URLENCODED_PASS=`urlencode "$PASS"`
+
+if "$WGET" --ca-directory="$EDUFW_CA_DIR" -O"$REGID_FILE" --post-data="mac=$URLENCODED_MAC&pass=$URLENCODED_PASS" "$REG_SERVER/register/"; then
+. "$REGID_FILE"
+else
+  echo "ERROR: Cannot request registration id" >&2 
+  exit 1
+fi
+
+if openssl req -newkey rsa:"$RSA_BITS" -keyout "$KEY_FILE" -out "$REQ_FILE" -nodes -subj "/CN=$regid/" 2>/dev/null; then
+  URLENCODED_REQ="$(perl -MURI::Escape -e 'print uri_escape(do { local $/; <STDIN> });' <$REQ_FILE)"
+  "$WGET" --ca-directory="$EDUFW_CA_DIR" -q -Orequest.res --post-data="req=$URLENCODED_REQ" "$REG_SERVER/set-request/$regid/"
+else
+  echo "ERROR: Cannot create certificate request" >&2 
+  exit 2
+fi

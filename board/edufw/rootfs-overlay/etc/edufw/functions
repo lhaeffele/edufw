@@ -1,5 +1,12 @@
 #!/bin/sh
 
+unset http_proxy
+unset https_proxy
+
+EDUFW_MP=/edufw
+EDUFW_FIRMWARE="$EDUFW_MP/kernel.img"
+EDUFW_FIRMWARE_CHECK_TIMEOUT=240
+
 error() {
         echo "$1" >&2
 }
@@ -9,11 +16,16 @@ die() {
         exit 1
 }
 
+# board_type can be AMD64, X86 or RPI3
+get_board_type() {
+	cat /etc/edufw/board
+}
+
 find_install_media() {
     # Find installation media
     for DEV in `ls /dev/sd* /dev/sr*`; do
         if mount "$DEV" /mnt >/dev/null 2>&1; then
-            if [ -e "/mnt/EDUFW_ISO-$EDUFW_VERSION" ]; then
+            if [ -e "/mnt/EDUFW_ISO-${EDUFW_VERSION}-${BUILDROOT_VERSION}" ]; then
                 INSTALL_DEV="$DEV"
             fi
             umount "$DEV" >/dev/null 2>&1
@@ -27,4 +39,21 @@ find_install_media() {
 is_booting_from_iso() {
     # if /proc/cmdline contains BOOT_IMAGE=/bzImage then we are booting from ISO IMAGE
     grep -q 'BOOT_IMAGE=/bzImage' /proc/cmdline
+}
+
+get_config_file() {
+    configfile="$1"
+    curdir=$(dirname $0)
+
+    # Check existing file
+    for dir in "$HOME/.edufw" "/etc/edufw" "$curdir/../etc/edufw"; do
+        [ -s "$dir/$configfile" ] && echo "$dir/$configfile" && return 0
+    done
+
+    # If no existing file, check existing dir
+    for dir in "$HOME/.edufw" "/etc/edufw" "$curdir/../etc/edufw"; do
+        [ -d "$dir" ] && echo "$dir/$configfile" && return 0
+    done
+
+    return 1
 }

@@ -1,0 +1,4 @@
+- Add nano editor in buildroot config
+- Make a script to modify default config
+- Add registration
+- Add EdufwServer connexion

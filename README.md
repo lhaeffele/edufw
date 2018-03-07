@@ -6,6 +6,12 @@ The unusual part is that apart from the first installation, everything will be d
 
 Edufw is built with buildroot.
 
+## Test
+You can test this software using grub or any other virtualisation system.
+On linux, the command is 
+  truncate -s 512M edufw_sda1.image
+  qemu-system-i386 edufw_sda1.image -m 256 -cdrom $ISO_IMAGE -boot order=dc
+
 ## Installation
 To install edufw:
 - download the iso image
@@ -33,10 +39,8 @@ To rebuild an image from edufw:
 - in the buildroot main directory, start these commands :
 ```
 EDUFW_PATH=<PATH_TO_EDUFW_REPOSITORY>
-make defconfig BR2_EXTERNAL=$EDUFW_PATH BR2_DEFCONFIG=$EDUFW_PATH/configs/edufw_defconfig
-make
-make rsyslog-rebuild
-make
+make defconfig BR2_EXTERNAL=$EDUFW_PATH BR2_DEFCONFIG=$EDUFW_PATH/configs/edufw_rpi3_defconfig
+make UCLIBC_CONFIG_FILE=$EDUFW_PATH/board/edufw/uclibc.config
 ```
 Be careful ... the first compilation can be very long (about 1 hour and 40 minutes on my laptop).
 
@@ -50,7 +54,7 @@ The iso image will be built in output/images/ in this buildroot main directory
 - Version 0.5: simple http proxy
 - Version 0.6: proxy with url filtering
 - Version 0.7: implement snmp
-- Version 0.8: use the edufw-server for all config parameters
-- Version 0.9: allow IPv6 firewalling rules
+- Version 1.0: use the edufw-server for all config parameters
+- Version 1.1: allow IPv6 firewalling rules
 
 ## Configuration

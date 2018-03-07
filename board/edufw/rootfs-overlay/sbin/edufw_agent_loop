@@ -1,0 +1,19 @@
+#!/bin/sh
+
+[ -f /etc/edufw/version ] && . /etc/edufw/version
+[ -f /etc/edufw/functions ] && . /etc/edufw/functions
+[ -f "$HOME/.edufw/version" ] && . "$HOME/.edufw/version"
+[ -f "$HOME/.edufw/functions" ] && . "$HOME/.edufw/functions"
+
+EDUFW_AGENT_KEY_FILE=$(get_config_file "cert.key")
+EDUFW_AGENT_CERT_FILE=$(get_config_file "cert.pem")
+EDUFW_AGENT_CA_PATH=$(get_config_file "ca")
+EDU_SERVER_FILE=$(get_config_file ".eduserver.txt")
+EDUFW_AGENT_SERVER=$(cat "$EDU_SERVER_FILE")
+
+export EDUFW_AGENT_KEY_FILE EDUFW_AGENT_CERT_FILE EDUFW_AGENT_CA_PATH EDUFW_AGENT_SERVER
+
+while true; do
+    /sbin/edufw_agent
+    sleep 30
+done

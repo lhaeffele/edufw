@@ -1,0 +1,24 @@
+#!/bin/sh
+
+[ -f /etc/edufw/version ] && . /etc/edufw/version
+[ -f /etc/edufw/functions ] && . /etc/edufw/functions
+[ -f "$HOME/.edufw/version" ] && . "$HOME/.edufw/version"
+[ -f "$HOME/.edufw/functions" ] && . "$HOME/.edufw/functions"
+
+echo "Copying config from hard disk ..."
+
+if is_booting_from_iso; then
+    die "Booting from iso ... doing nothing"
+fi
+
+mount LABEL=EDUFW "$EDUFW_MP" \
+    || die "Cannot mount LABEL=EDUFW on $EDUFW_MP: $!"
+
+# Copy config files
+# ssh keys should be in ssh/ and edufw-config.yaml in edufw/
+cp -a "$EDUFW_MP/config/*" /etc/ \
+    || error "Cannot copy config from $EDUFW_MP/config/: $!"
+
+#umount "$EDUFW_MP" \
+#    || die "Cannot umount LABEL=EDUFW from $EDUFW_MP: $!"
+

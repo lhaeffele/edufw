@@ -1,0 +1,36 @@
+#!/bin/sh
+
+[ -f /etc/edufw/version ] && . /etc/edufw/version
+[ -f /etc/edufw/functions ] && . /etc/edufw/functions
+[ -f "$HOME/.edufw/version" ] && . "$HOME/.edufw/version"
+[ -f "$HOME/.edufw/functions" ] && . "$HOME/.edufw/functions"
+
+WGET="wget"
+
+EDUFW_CA_DIR=$(get_config_file "ca")
+REG_SERVER_FILE=$(get_config_file ".regserver.txt")
+REGID_FILE=$(get_config_file "regid.conf")
+CERT_FILE=$(get_config_file "cert.pem")
+
+REG_SERVER=$(cat "$REG_SERVER_FILE")
+
+[ -z "$REG_SERVER" ] && die "Registration server not defined"
+
+if [ -s "$REGID_FILE" ]; then
+    . "$REGID_FILE"
+    if [ -n "$regid" ]; then
+        echo "Already registered as id $regid" >&2
+    else
+        echo "Not registered" >&2
+        exit 1
+    fi
+fi
+
+"$WGET" --ca-directory="$EDUFW_CA_DIR" -q -O"$CERT_FILE" --post-data="regid=$regid" "$REG_SERVER/get-cert/"
+RES="$?"
+
+while [ "$RES" != 0 ]; do
+    sleep 60
+    "$WGET" --ca-directory="$EDUFW_CA_DIR" -q -O"$CERT_FILE" --post-data="regid=$regid" "$REG_SERVER/get-cert/"
+    RES="$?"
+done

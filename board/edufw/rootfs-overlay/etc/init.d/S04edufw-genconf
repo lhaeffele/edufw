@@ -2,7 +2,7 @@
 
 case "$1" in
 	start|'')
-		/sbin/edufw_genconf
+		/sbin/edufw_conf_gen
 		;;
 	stop)
 		;;
