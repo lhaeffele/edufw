@@ -1,4 +1,5 @@
-- Add nano editor in buildroot config
 - Make a script to modify default config
-- Add registration
-- Add EdufwServer connexion
+- Configure squid
+- Make ports 80 and 443 redirect to nginx
+- Make a script to download blacklists
+- Find a way to configure blacklists

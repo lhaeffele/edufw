@@ -5,8 +5,18 @@
 [ -f "$HOME/.edufw/version" ] && . "$HOME/.edufw/version"
 [ -f "$HOME/.edufw/functions" ] && . "$HOME/.edufw/functions"
 
+# Do not verify firmware if already done
 [ -f "$EDUFW_FIRMWARE.OK" ] && exit 0
 
+# Do not verify firmware if not recovery firmware available
 ! [ -f "$EDUFW_FIRMWARE.old" ] && exit 0
+
+# Do not verify firmware if edufw server not defined
+EDU_SERVER_FILE=$(get_config_file ".eduserver.txt")
+EDUFW_AGENT_SERVER=""
+if [ -f "$EDU_SERVER_FILE" ]; then
+  EDUFW_AGENT_SERVER=$(cat "$EDU_SERVER_FILE")
+fi
+[ -n "$EDUFW_AGENT_SERVER" ] && exit 0
 
 edufw_firmware_sleep_and_rollback &

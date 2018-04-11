@@ -15,7 +15,7 @@ cp "$BINARIES_DIR/bcm2710-rpi-cm3.dtb" .
 #cp "$BINARIES_DIR/rootfs.tar.gz" initrd.gz
 
 cat >cmdline.txt <<_END_
-dwc_otg.lpm_enable=0 console=ttyAMA0,115200 console=tty1 elevator=deadline
+dwc_otg.lpm_enable=0 console=tty1 console=ttyAMA0,115200 elevator=deadline
 _END_
 
 cat >config.txt <<_END_

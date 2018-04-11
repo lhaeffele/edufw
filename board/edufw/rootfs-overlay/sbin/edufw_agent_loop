@@ -7,13 +7,16 @@
 
 EDUFW_AGENT_KEY_FILE=$(get_config_file "cert.key")
 EDUFW_AGENT_CERT_FILE=$(get_config_file "cert.pem")
-EDUFW_AGENT_CA_PATH=$(get_config_file "ca")
+EDUFW_AGENT_CA_FILE=$(get_config_file "ca.pem")
 EDU_SERVER_FILE=$(get_config_file ".eduserver.txt")
 EDUFW_AGENT_SERVER=$(cat "$EDU_SERVER_FILE")
 
-export EDUFW_AGENT_KEY_FILE EDUFW_AGENT_CERT_FILE EDUFW_AGENT_CA_PATH EDUFW_AGENT_SERVER
+export EDUFW_AGENT_KEY_FILE EDUFW_AGENT_CERT_FILE EDUFW_AGENT_CA_FILE EDUFW_AGENT_SERVER
+
+FW_SHA256=$(sha256sum "$EDUFW_MP"/kernel.img | cut -f1 -d' ')
 
 while true; do
-    /sbin/edufw_agent
+    CONF_SHA256=$(sha256sum "$EDUFW_MP"/config/edufw/edufw-config.yaml | cut -f1 -d' ')
+    /sbin/edufw_agent "$FW_SHA256" "$CONF_SHA256" >/dev/null 2>&1
     sleep 30
 done

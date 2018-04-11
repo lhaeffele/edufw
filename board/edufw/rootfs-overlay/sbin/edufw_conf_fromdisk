@@ -16,8 +16,11 @@ mount LABEL=EDUFW "$EDUFW_MP" \
 
 # Copy config files
 # ssh keys should be in ssh/ and edufw-config.yaml in edufw/
-cp -a "$EDUFW_MP/config/*" /etc/ \
+cp -av "$EDUFW_MP/config/"* /etc/ \
     || error "Cannot copy config from $EDUFW_MP/config/: $!"
+
+# Change key rights
+chown 600 /etc/ssh/ssh_host_*_key
 
 #umount "$EDUFW_MP" \
 #    || die "Cannot umount LABEL=EDUFW from $EDUFW_MP: $!"

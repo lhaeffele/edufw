@@ -15,8 +15,8 @@ use IPC::Run qw{run timeout};
 my $CRLF= "\015\012";
 
 my $PROTOCOL_VERSION = '0.1';
-my $FIRMWARE_VERSION = '7112f845746a59b7f0182a8932ea4cf9174f49d038c7ab44a76cdb677cc8f88f';
-my $CONFIG_VERSION = 'eedbb941da3ea6f467b890611c7ac67e40053cd5192e2b86964809be75eccf35';
+my $FIRMWARE_VERSION = $ARGV[0];
+my $CONFIG_VERSION = $ARGV[1];
 
 my $MYHOSTNAME = qx{hostname};
 chomp($MYHOSTNAME);
@@ -28,8 +28,8 @@ my $CMD_TIMEOUT = 10; # Seconds
 AnyEvent::Log::ctx->log_to_warn;
 my $cv = AnyEvent->condvar;
 
-my $EDUFW_SERVER = $ARGV[0] || $ENV{'EDUFW_AGENT_SERVER'} || 'localhost';
-my $EDUFW_PORT = $ARGV[1] || 32323;
+my $EDUFW_SERVER = $ARGV[2] || $ENV{'EDUFW_AGENT_SERVER'} || 'localhost';
+my $EDUFW_PORT = $ARGV[3] || 32323;
 my ($host, $port) = ($EDUFW_SERVER, $EDUFW_PORT);
 
 sub wr {
@@ -103,12 +103,12 @@ sub validate_firmware {
     my @atcommand = ('edufw_firmware_validate');
     my ($in, $out, $err);
     if (run(\@atcommand, \$in, \$out, \$err, timeout($CMD_TIMEOUT))) {
-        AE::log debug => @atcommand[0]." STDOUT: $out";
-        AE::log debug => @atcommand[0]."AT STDERR: $err";
+        AE::log debug => $atcommand[0]." STDOUT: $out";
+        AE::log debug => $atcommand[0]."AT STDERR: $err";
         return 1;
     }
     else {
-        AE::log error => @atcommand[0]." error: $!";
+        AE::log error => $atcommand[0]." error: $!";
     }
     return;
 }
@@ -119,8 +119,8 @@ my $handle = AnyEvent::Handle->new(
     tls      => "connect",
     tls_ctx  => {
         verify => 1,
-        verify_peername => "EDUFW Server",
-        ca_path   => $ENV{'EDUFW_AGENT_CA_PATH'},
+        verify_peername => "$host",
+        ca_file   => $ENV{'EDUFW_AGENT_CA_FILE'},
         method    => "TLSv1_2",
         cert_file => $ENV{'EDUFW_AGENT_CERT_FILE'},
         key_file  => $ENV{'EDUFW_AGENT_KEY_FILE'},

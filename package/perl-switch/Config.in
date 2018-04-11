@@ -1,0 +1,4 @@
+config BR2_PACKAGE_PERL_SWITCH
+	bool "perl-switch"
+	help
+	  Perl Switch core package

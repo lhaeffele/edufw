@@ -4,9 +4,9 @@
 #
 ################################################################################
 
-GRUB2_TOOLS_VERSION = 2.00
+GRUB2_TOOLS_VERSION = 2.02
 GRUB2_TOOLS_SITE = $(BR2_GNU_MIRROR)/grub
-GRUB2_TOOLS_SOURCE = grub-$(GRUB2_VERSION).tar.xz
+GRUB2_TOOLS_SOURCE = grub-$(GRUB2_TOOLS_VERSION).tar.xz
 GRUB2_TOOLS_LICENSE = GPLv3+
 GRUB2_TOOLS_LICENSE_FILES = COPYING
 GRUB2_TOOLS_DEPENDENCIES = host-bison host-flex

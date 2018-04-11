@@ -7,8 +7,12 @@
 
 [ -f "$EDUFW_FIRMWARE.OK" ] && exit 0
 
-echo "Rollbacking firmware"
+echo "Rollbacking firmware in 30s ... \"touch $EDUFW_FIRMWARE.OK\" to cancel reboot "
+sleep 30
+
+[ -f "$EDUFW_FIRMWARE.OK" ] && exit 0
+
 mv "$EDUFW_FIRMWARE.old" "$EDUFW_FIRMWARE" \
-    && echo "Rebooting in 30s ..." \
-    && sleep 30 \
-    && init 6
+    && sync \
+    && sleep 5 \
+    && reboot

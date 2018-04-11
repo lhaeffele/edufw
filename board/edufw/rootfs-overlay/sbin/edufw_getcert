@@ -7,7 +7,7 @@
 
 WGET="wget"
 
-EDUFW_CA_DIR=$(get_config_file "ca")
+EDUFW_CA=$(get_config_file "ca.pem")
 REG_SERVER_FILE=$(get_config_file ".regserver.txt")
 REGID_FILE=$(get_config_file "regid.conf")
 CERT_FILE=$(get_config_file "cert.pem")
@@ -26,11 +26,24 @@ if [ -s "$REGID_FILE" ]; then
     fi
 fi
 
-"$WGET" --ca-directory="$EDUFW_CA_DIR" -q -O"$CERT_FILE" --post-data="regid=$regid" "$REG_SERVER/get-cert/"
+if [ -s "$CERT_FILE" ]; then
+    echo "Certificate already downloaded" >&2
+    exit 0
+fi
+
+"$WGET" --ca-certificate="$EDUFW_CA" -q -O"$CERT_FILE" --post-data="regid=$regid" "$REG_SERVER/get-cert/"
 RES="$?"
 
 while [ "$RES" != 0 ]; do
     sleep 60
-    "$WGET" --ca-directory="$EDUFW_CA_DIR" -q -O"$CERT_FILE" --post-data="regid=$regid" "$REG_SERVER/get-cert/"
+    "$WGET" --ca-certificate="$EDUFW_CA" -q -O"$CERT_FILE" --post-data="regid=$regid" "$REG_SERVER/get-cert/"
     RES="$?"
 done
+
+if cp "$CERT_FILE" "/edufw/config/edufw/cert.pem"; then
+  :
+else
+  echo "ERROR: Cannot copy registration id file '$CERT_FILE' to '/edufw/config/edufw/cert.pem'" >&2
+  exit 3
+fi
+

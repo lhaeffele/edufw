@@ -10,9 +10,9 @@ WGET="wget"
 MAXDAYS="7"
 
 REG_SERVER_FILE=$(get_config_file ".regserver.txt")
-REGID_FILE=$(get_config_file "regid.conf")
 PASS_FILE=$(get_config_file ".regpass.txt")
-EDUFW_CA_DIR=$(get_config_file "ca")
+EDUFW_CA=$(get_config_file "ca.pem")
+REGID_FILE=$(get_config_file "regid.conf")
 KEY_FILE=$(get_config_file "cert.key")
 REQ_FILE="/tmp/cert.req"
 
@@ -39,10 +39,10 @@ MAC=$(ip ad sh dev "$DEVICE" | grep /ether | awk '{print $2}')
 if [ -z "$MAC" ]; then MAC=00:00:00:00:00:00; fi
 PASS=$(cat "$PASS_FILE")
 
-URLENCODED_MAC=`urlencode "$MAC"`
-URLENCODED_PASS=`urlencode "$PASS"`
+URLENCODED_MAC=`perl -MURI::Escape -e 'print uri_escape($ARGV[0]);' "$MAC"`
+URLENCODED_PASS=`perl -MURI::Escape -e 'print uri_escape($ARGV[0]);' "$PASS"`
 
-if "$WGET" --ca-directory="$EDUFW_CA_DIR" -O"$REGID_FILE" --post-data="mac=$URLENCODED_MAC&pass=$URLENCODED_PASS" "$REG_SERVER/register/"; then
+if "$WGET" --ca-certificate="$EDUFW_CA" -O"$REGID_FILE" --post-data="mac=$URLENCODED_MAC&pass=$URLENCODED_PASS" "$REG_SERVER/register/"; then
 . "$REGID_FILE"
 else
   echo "ERROR: Cannot request registration id" >&2 
@@ -51,8 +51,22 @@ fi
 
 if openssl req -newkey rsa:"$RSA_BITS" -keyout "$KEY_FILE" -out "$REQ_FILE" -nodes -subj "/CN=$regid/" 2>/dev/null; then
   URLENCODED_REQ="$(perl -MURI::Escape -e 'print uri_escape(do { local $/; <STDIN> });' <$REQ_FILE)"
-  "$WGET" --ca-directory="$EDUFW_CA_DIR" -q -Orequest.res --post-data="req=$URLENCODED_REQ" "$REG_SERVER/set-request/$regid/"
+  "$WGET" --ca-certificate="$EDUFW_CA" -q -Orequest.res --post-data="req=$URLENCODED_REQ" "$REG_SERVER/set-request/$regid/"
 else
   echo "ERROR: Cannot create certificate request" >&2 
   exit 2
+fi
+
+if cp "$REGID_FILE" "/edufw/config/edufw/regid.conf"; then
+  :
+else
+  echo "ERROR: Cannot copy registration id file '$REGID_FILE' to '/edufw/config/edufw/regid.conf'" >&2
+  exit 3
+fi
+
+if cp "$KEY_FILE" "/edufw/config/edufw/cert.key"; then
+  :
+else
+  echo "ERROR: Cannot copy registration id file '$KEY_FILE' to '/edufw/config/edufw/cert.key'" >&2
+  exit 4
 fi

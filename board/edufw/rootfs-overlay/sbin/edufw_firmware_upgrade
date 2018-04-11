@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Args : firmawre_name firmware_url firmware_sha256
 FW_NAME="$1"
@@ -14,12 +14,17 @@ FIRMWARE_DIR="$EDUFW_MP/firmwares"
 
 # Create destination directory
 mkdir -p "$FIRMWARE_DIR"
-TMPFILE=$(tempfile -p "FIRMWARE" -d "$FIRMWARE_DIR")
+TMPFILE=$(mktemp -p "$FIRMWARE_DIR")
 
 # Downloading firmware to temporary file
 echo "Downloading $FW_NAME"
-wget -o "$TMPFILE" "$FW_URL" \
+wget -O "$TMPFILE" "$FW_URL" \
   || die "Cannot download $FW_URL to $TMPFILE"
+
+echo "Checking file integrity"
+CALC_SHA256=$(sha256sum "$TMPFILE" | cut -d" " -f1)
+[ "$CALC_SHA256" == "$FW_SHA256" ] \
+  || die "File integrity ERROR ($CALC_SHA256 instead of $FW_SHA256)"
 
 # Backup old firmware
 echo "Backup old firmware"
@@ -27,7 +32,7 @@ cp -a "$EDUFW_FIRMWARE" "$EDUFW_FIRMWARE.old" \
   || die "Cannot backup old firmware"
 
 # Move firmare to standard destination
-if mv $TMPFILE "$EDUFW_FIRMWARE" then
+if mv $TMPFILE "$EDUFW_FIRMWARE"; then
   # Remove firmware validation
   rm "$EDUFW_FIRMWARE.ok"
 

@@ -1,0 +1,4 @@
+config BR2_PACKAGE_PERL_IPC_RUN
+	bool "perl-ipc-run"
+	help
+	  Perl IPC::Run

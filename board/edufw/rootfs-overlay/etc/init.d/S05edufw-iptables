@@ -2,11 +2,13 @@
 
 case "$1" in
 	start|'')
+		sysctl -w net.ipv4.ip_forward=1
 		echo "Applying iptables rules from /etc/iptables.rules"
 		/usr/sbin/iptables-restore /etc/iptables.rules
 		;;
 	stop)
 		echo "Saving iptables rules into /etc/iptables.rules"
 		/usr/sbin/iptables-save >/etc/iptables.rules
+		sysctl -w net.ipv4.ip_forward=0
 		;;
 esac
