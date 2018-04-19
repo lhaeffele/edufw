@@ -13,10 +13,10 @@ EDUFW_AGENT_SERVER=$(cat "$EDU_SERVER_FILE")
 
 export EDUFW_AGENT_KEY_FILE EDUFW_AGENT_CERT_FILE EDUFW_AGENT_CA_FILE EDUFW_AGENT_SERVER
 
-FW_SHA256=$(sha256sum "$EDUFW_MP"/kernel.img | cut -f1 -d' ')
+FW_SHA256=$(sha256sum "$EDUFW_MP"/kernel.img 2>/dev/null | cut -f1 -d' ')
 
 while true; do
-    CONF_SHA256=$(sha256sum "$EDUFW_MP"/config/edufw/edufw-config.yaml | cut -f1 -d' ')
+    CONF_SHA256=$(sha256sum "$EDUFW_MP"/config/edufw/edufw-config.yaml 2>/dev/null | cut -f1 -d' ')
     /sbin/edufw_agent "$FW_SHA256" "$CONF_SHA256" >/dev/null 2>&1
     sleep 30
 done

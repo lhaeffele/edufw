@@ -9,3 +9,4 @@
 - Add a default config / TO VERIFY
 - Add firewall templates
 - Add random default root passwd and show it in motd / TO VERIFY
+- Add wpad.dat file

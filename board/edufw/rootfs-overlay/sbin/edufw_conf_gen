@@ -19,11 +19,14 @@ my $DST_DIR = '';
 my $default_config_file = $ARGV[0] || dirname($0).'/../usr/share/edufw/edufw-default-config.yaml';
 my $default_config = LoadFile($default_config_file);
 
-my $local_config_file = $ARGV[0] || dirname($0).'/../etc/edufw/edufw-config.yaml';
-my $local_config = LoadFile($local_config_file);
-
-my $merger = Hash::Merge->new('RIGHT_PRECEDENT');
-my $config = $merger->merge( $default_config, $local_config );
+my $config = $default_config;
+if ( -f dirname($0).'/../etc/edufw/edufw-config.yaml' ) {
+  my $local_config_file = $ARGV[0] || dirname($0).'/../etc/edufw/edufw-config.yaml';
+  my $local_config = LoadFile($local_config_file);
+  
+  my $merger = Hash::Merge->new('RIGHT_PRECEDENT');
+  $config = $merger->merge( $default_config, $local_config );
+}
 
 my $tt_config = {
   INCLUDE_PATH => $SRC_DIR,
