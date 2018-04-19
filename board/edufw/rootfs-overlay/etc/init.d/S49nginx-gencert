@@ -1,0 +1,16 @@
+#!/bin/sh
+
+[ -f /etc/edufw/version ] && . /etc/edufw/version
+[ -f /etc/edufw/functions ] && . /etc/edufw/functions
+[ -f "$HOME/.edufw/version" ] && . "$HOME/.edufw/version"
+[ -f "$HOME/.edufw/functions" ] && . "$HOME/.edufw/functions"
+
+NGINX_KEY_FILE=$(get_config_file "nginx-cert.key")
+NGINX_CERT_FILE=$(get_config_file "nginx-cert.pem")
+
+[ ! -f "$NGINX_CERT_FILE" ] \
+  && echo -n "Generating nginx self signed certificate ... " \
+  && openssl req -x509 -newkey rsa:4096 -nodes -keyout "$NGINX_KEY_FILE" -out "$NGINX_CERT_FILE" -days 3650 -subj '/CN=www.local' \\
+  && cp "$NGINX_KEY_FILE" /edufw/config/edufw/nginx-cert.key \
+  && cp "$NGINX_CERT_FILE" /edufw/config/edufw/nginx-cert.pem \
+  && echo OK || echo ERROR

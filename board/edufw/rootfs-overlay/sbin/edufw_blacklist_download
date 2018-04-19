@@ -1,0 +1,29 @@
+#!/bin/sh
+
+[ -f /etc/edufw/version ] && . /etc/edufw/version
+[ -f /etc/edufw/functions ] && . /etc/edufw/functions
+[ -f "$HOME/.edufw/version" ] && . "$HOME/.edufw/version"
+[ -f "$HOME/.edufw/functions" ] && . "$HOME/.edufw/functions"
+
+MODE="$1"
+DATA="$2"
+
+if [ "$MODE" = "UT1" ]; then
+  [ ! -d "/edufw/blacklists" ] && mkdir -p "/edufw/blacklists"
+  # Download blacklist archive
+  if wget -P /edufw/blacklists -N -q "http://dsi.ut-capitole.fr/blacklists/download/$DATA.tar.gz"; then
+    # If blacklist database is newer than our; then untar it and create new database
+    UNTAR=YES
+    if [ -f "/edufw/blacklists/$DATA/domains.db" ]; then
+      UNTAR=NO
+      find "/edufw/blacklists/$DATA.tar.gz" -newer /edufw/blacklists/$DATA/domains.db -exec echo NEW \; | grep -q NEW && UNTAR=YES
+    fi
+    [ "$UNTAR" = "YES" ] \
+      && tar xzf "/edufw/blacklists/$DATA.tar.gz" -C "/edufw/blacklists/" \
+      && c-icap-mods-sguardDB -C -db "/edufw/blacklists/$DATA/"
+  else
+    echo "Cannot download 'http://dsi.ut-capitole.fr/blacklists/download/$DATA.tar.gz' to " >&2
+  fi
+else
+  :
+fi

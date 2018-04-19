@@ -1,5 +1,10 @@
-- Make a script to modify default config
-- Configure squid
-- Make ports 80 and 443 redirect to nginx
-- Make a script to download blacklists
-- Find a way to configure blacklists
+- Make a script to modify default config / DONE
+- Configure squid / DONE
+- Make ports 80 and 443 redirect to nginx / TO VERIFY
+- Make a script to download blacklists / DONE
+- Automate blacklists download / VERIFY BOOT PBS
+- Find a way to configure blacklists / DONE
+- See startup problems / DONE
+- Check RPI3 performances
+- Add a default config
+- Add firewall templates

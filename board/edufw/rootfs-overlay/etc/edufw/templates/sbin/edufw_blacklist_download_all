@@ -1,0 +1,5 @@
+#!/bin/sh
+
+[% FOREACH filter IN config.services.proxy.filter.list %]
+/sbin/edufw_blacklist_download [% filter.type %] [% filter.name +%]
+[% END # FOREACH filter %]
