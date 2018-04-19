@@ -1,0 +1,10 @@
+#!/bin/sh
+
+#grep -q '$6$dosh/H1UpnJtb$mrvCDyxlYKY9/Lo8qeJpBkoO0gSJ6P8yMEj2joByZ3RUFU4witvjL3uJU/0FOq338Lfw5PZ2MC6bgvqwNHRHr1' /etc/shadow \
+#  && NEWPASS="$(pwgen  -y -B 12 1)" \
+#  && echo "root passwd is $NEWPASS" \
+#  && echo "root passwd is $NEWPASS" >> /etc/issue \
+#  && passwd root <<_END_
+#$NEWPASS
+#$NEWPASS
+#_END_

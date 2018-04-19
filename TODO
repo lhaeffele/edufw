@@ -6,5 +6,6 @@
 - Find a way to configure blacklists / DONE
 - See startup problems / DONE
 - Check RPI3 performances
-- Add a default config
+- Add a default config / TO VERIFY
 - Add firewall templates
+- Add random default root passwd and show it in motd / TO VERIFY

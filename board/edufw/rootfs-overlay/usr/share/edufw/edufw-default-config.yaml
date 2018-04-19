@@ -115,7 +115,6 @@ firewall:
         extremity:
             lo: 127.0.0.1/32
             any: 0.0.0.0/0
-            eth1-ipv4: 192.168.255.254
             dummy0-ipv4: 172.31.255.254
         filter:
             - name: LOG_ACCEPT
@@ -149,15 +148,6 @@ firewall:
                       limit_burst: 3
                       target: ACCEPT
                     - iint: eth1
-                      dst: eth1-ipv4
-                      src: any
-                      services:
-                          - any-tcp
-                          - any-udp
-                      target: ACCEPT
-                    - iint: eth1
-                      dst: dummy0-ipv4
-                      src: any
                       services:
                           - any-tcp
                           - any-udp
