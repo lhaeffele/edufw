@@ -11,12 +11,19 @@ use File::Path qw{make_path};
 use File::Basename;
 use File::Find;
 use File::stat;
+use Hash::Merge;
 
 my $SRC_DIR = dirname($0).'/../etc/edufw/templates/';
 my $DST_DIR = '';
 
-my $config_file = $ARGV[0] || dirname($0).'/../etc/edufw/edufw-config.yaml';
-my $config = LoadFile($config_file);
+my $default_config_file = $ARGV[0] || dirname($0).'/../usr/share/edufw/edufw-default-config.yaml';
+my $default_config = LoadFile($default_config_file);
+
+my $local_config_file = $ARGV[0] || dirname($0).'/../etc/edufw/edufw-config.yaml';
+my $local_config = LoadFile($local_config_file);
+
+my $merger = Hash::Merge->new('RIGHT_PRECEDENT');
+my $config = $merger->merge( $default_config, $local_config );
 
 my $tt_config = {
   INCLUDE_PATH => $SRC_DIR,

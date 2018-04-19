@@ -1,0 +1,4 @@
+config BR2_PACKAGE_PERL_HASH_MERGE
+	bool "perl-hash-merge"
+	help
+	  Perl Hash::Merge package

@@ -1,5 +1,6 @@
 menu "Perl libraries/modules"
 source "$BR2_EXTERNAL_EDUFW_PATH/package/perl-anyevent/Config.in"
+source "$BR2_EXTERNAL_EDUFW_PATH/package/perl-hash-merge/Config.in"
 source "$BR2_EXTERNAL_EDUFW_PATH/package/perl-ipc-run/Config.in"
 source "$BR2_EXTERNAL_EDUFW_PATH/package/perl-switch/Config.in"
 source "$BR2_EXTERNAL_EDUFW_PATH/package/perl-template/Config.in"
