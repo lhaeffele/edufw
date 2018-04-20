@@ -1,0 +1,4 @@
+config BR2_PACKAGE_PERL_TEMPLATE_PLUGIN_IPADDR
+	bool "perl-template-plugin-ipaddr"
+	help
+	  Template Toolkit plugin for IPAddr

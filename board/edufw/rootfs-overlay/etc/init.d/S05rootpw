@@ -1,0 +1,10 @@
+#!/bin/sh
+
+grep -q 'root:$1$T.j9BjLM$MUI9nx9f6.A1aU34Xu8u11' /etc/shadow \
+  && NEWPASS="$(pwgen -y 16 1)" \
+  && echo "root passwd is $NEWPASS" \
+  && SHELLPASS="$(echo "$NEWPASS" | sed 's:\\:\\\\:g')" \
+  && echo -e "$SHELLPASS\n$SHELLPASS" | passwd root \
+  && echo "root passwd is $SHELLPASS" >> /etc/issue \
+  && HTMLPASS=`perl -MHTML::Entities -e 'print encode_entities($ARGV[0]);' "$NEWPASS"` \
+  && echo "<html><head><title>Edufw password</title></head><body>root passwd is $HTMLPASS</body></html>" >> /var/www/pass.html

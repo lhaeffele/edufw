@@ -35,7 +35,7 @@ If your really need to upgrade it manually:
 ## Rebuild an image
 To rebuild an image from edufw:
 - download this project
-- download buildroot from https://buildroot.org/download.html and install it anywhere
+- download buildroot from https://buildroot.org/download.html and install it anywhere (buildroot 18.02 minimum)
 - in the buildroot main directory, start these commands :
 ```
 EDUFW_PATH=<PATH_TO_EDUFW_REPOSITORY>

@@ -1,0 +1,4 @@
+config BR2_PACKAGE_PERL_SCALAR_LIST_UTILS
+	bool "perl-scalar-list-utils"
+	help
+	  Perl scalar list utils module

@@ -1,0 +1,15 @@
+function FindProxyForURL(url, host) {
+  // localhost
+  if (isInNet(dnsResolve(host), "127.0.0.0", "255.0.0.0") )
+    return "DIRECT";
+
+  // local network
+  if (isInNet(myIpAddress(), "[% config.network.interfaces.eth1.address %]", "[% config.network.interfaces.eth1.netmask %]") )
+    return "DIRECT";
+
+  // dummy network
+  if (isInNet(myIpAddress(), "[% config.network.interfaces.dummy0.address %]", "[% config.network.interfaces.dummy0.netmask %]") )
+    return "DIRECT";
+
+  return "PROXY [% config.network.interfaces.eth1.address %]:3128; DIRECT";
+}

@@ -14,11 +14,14 @@ PASS_FILE=$(get_config_file ".regpass.txt")
 EDUFW_CA=$(get_config_file "ca.pem")
 REGID_FILE=$(get_config_file "regid.conf")
 KEY_FILE=$(get_config_file "cert.key")
+CERT_FILE=$(get_config_file "cert.pem")
 REQ_FILE="/tmp/cert.req"
 
 REG_SERVER=$(cat "$REG_SERVER_FILE")
 
 [ -z "$REG_SERVER" ] && die "Registration server not defined"
+
+[ -s "$CERT_FILE" ] && echo "Registration already done" >&2 && exit 0
 
 if [ -s "$REGID_FILE" ]; then
     . "$REGID_FILE"
